@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_similarity, pairwise_distances
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
 from collections import Counter
 import unicodedata
 
@@ -43,6 +44,10 @@ def preprocess_and_extract(cltk_nlp, text, chunk_size=50):
         pos_tags = []
         function_lemmas = []
         
+        # Function-word POS categories — matched by substring to handle CLTK
+        # tag name variants (e.g. CONJUNCTION, CONJ_COORD, ADP, PREP, PART, etc.)
+        FUNCTION_WORD_SUBSTRINGS = ('ADP', 'PREP', 'CONJ', 'PART', 'PRON', 'ADV')
+
         for word in doc.words:
             # Punctuation check
             if word.pos is not None and 'PUNCTUATION' not in word.pos.name:
@@ -50,9 +55,9 @@ def preprocess_and_extract(cltk_nlp, text, chunk_size=50):
                 lemmas_accented.append(lemma)
                 pos = word.pos.name
                 pos_tags.append(pos)
-                
-                # Function words (Adpositions, Conjunctions, Particles, Pronouns, Adverbs)
-                if pos in ['ADP', 'CONJ', 'SCONJ', 'CCONJ', 'PART', 'PRON', 'ADV']:
+
+                # Function words: match any tag containing a function-word substring
+                if any(sub in pos for sub in FUNCTION_WORD_SUBSTRINGS):
                     function_lemmas.append(lemma)
                     
         lemmas_deaccented = [remove_accents(w) for w in lemmas_accented]
@@ -69,7 +74,9 @@ def preprocess_and_extract(cltk_nlp, text, chunk_size=50):
             'function_accented': " ".join(function_lemmas),
             'function_deaccented': " ".join(function_lemmas_deaccented),
             'pos_tags': " ".join(pos_tags),
-            'char_4grams': " ".join(char_4grams)
+            'char_4grams': " ".join(char_4grams),
+            # Raw de-accented lemmas string — used for lexicon-based function-word filter
+            'all_lemmas_deaccented_list': lemmas_deaccented,
         })
         
     return processed_chunks
@@ -181,57 +188,106 @@ def main():
         plt.savefig(f'dendrogram_{feature_type}.png')
         plt.close()
 
-    # Bootstrap consensus logic for top 50 lemmas deaccented
-    print("Running Leave-one-out Bootstrap Consensus validation...")
+    # Leave-one-out cross-validation with silhouette score
+    print("Running Leave-one-out cross-validation with silhouette score...")
     base_res = results['lemmas_deaccented']
     if base_res:
-        stability_count = 0
         total_tests = len(all_chunks)
-        # We test stability by iterating over each chunk, removing it, calculating PCA, 
-        # and checking if the rest of the chunks from the same author group together.
-        for leave_out_idx in range(total_tests):
-            train_corpus = df['lemmas_deaccented'].tolist()
-            train_corpus.pop(leave_out_idx)
-            
-            vec = CountVectorizer(max_features=50)
-            dtm = vec.fit_transform(train_corpus).toarray()
-            # If shape is valid, compute PCA
-            if dtm.shape[1] > 0:
-                _, dtm_z = compute_delta(dtm)
-                pca = PCA(n_components=2)
-                pca_result = pca.fit_transform(dtm_z)
-                # We can visually inspect or implement programmatic checks 
-                # for clustering stability (e.g. silhouette score).
-                # For basic output, we know it ran successfully.
-                pass
-        print(f"Leave-one-out cross-validation computed over {total_tests} iterations.")
+        silhouette_scores = []
 
-    # Generate Top 10 Stylistic Markers Table (comparing Pseudo-Eupolemus vs Eupolemus)
-    # Using 'lemmas_deaccented' as a primary indicator for MFW
-    res = results['lemmas_deaccented']
-    if res:
-        dtm = res['dtm']
-        mean_a = np.mean(dtm[:len(chunks_a)], axis=0)
-        mean_b = np.mean(dtm[len(chunks_a):], axis=0)
-        diff = mean_a - mean_b
-        
-        # Sort by absolute difference
-        top_indices = np.argsort(np.abs(diff))[::-1][:10]
-        
-        markers_data = []
-        for idx in top_indices:
-            markers_data.append({
-                'Marker': res['feature_names'][idx],
-                'PE_Mean_Freq': round(mean_a[idx], 2),
-                'E_Mean_Freq': round(mean_b[idx], 2),
-                'Difference': round(diff[idx], 2),
-                'Favored_By': 'PE' if diff[idx] > 0 else 'E'
-            })
-            
-        markers_df = pd.DataFrame(markers_data)
-        markers_df.to_csv('stylistic_markers.csv', index=False)
-        print("Stylistic markers saved to 'stylistic_markers.csv'.")
+        for leave_out_idx in range(total_tests):
+            loo_corpus = df['lemmas_deaccented'].tolist()
+            loo_corpus.pop(leave_out_idx)
+            loo_labels_binary = [0 if l == 'PE' else 1 for i, l in enumerate(labels) if i != leave_out_idx]
+
+            vec = CountVectorizer(max_features=50, token_pattern=r"(?u)\b\S+\b")
+            dtm = vec.fit_transform(loo_corpus).toarray()
+
+            if dtm.shape[1] > 1 and len(set(loo_labels_binary)) > 1:
+                _, dtm_z = compute_delta(dtm)
+                # Silhouette score measures how well each chunk fits its own cluster
+                # vs the other cluster. Range: -1 (wrong cluster) to +1 (perfectly separated).
+                score = silhouette_score(dtm_z, loo_labels_binary, metric='cosine')
+                silhouette_scores.append(score)
+
+        mean_s = np.mean(silhouette_scores)
+        std_s = np.std(silhouette_scores)
+        print(f"Leave-one-out cross-validation over {total_tests} iterations:")
+        print(f"  Mean silhouette score: {mean_s:.4f} (std: {std_s:.4f})")
+        print(f"  Min: {min(silhouette_scores):.4f}, Max: {max(silhouette_scores):.4f}")
+        print(f"  Iterations with score > 0.0 (correct clustering): {sum(s > 0 for s in silhouette_scores)}/{len(silhouette_scores)}")
+
+    # Generate Top 10 Stylistic Markers Table — function words ONLY
+    # We use a curated de-accented Ancient Greek function-word lexicon to
+    # filter the MFW vector, bypassing CLTK POS tags entirely.
+    # Includes: conjunctions, particles, prepositions, pronouns, adverbs, copula.
+    GREEK_FUNCTION_WORDS = {
+        # Conjunctions & particles
+        'και', 'δε', 'τε', 'αλλα', 'ουν', 'μεν', 'γαρ', 'ιτι', 'οτι', 'ωσ',
+        'ωστε', 'ινα', 'επει', 'επειδη', 'εαν', 'ει', 'αν', 'ουδε', 'μηδε',
+        'μητε', 'ουτε', 'ητοι', 'ηδη', 'μεντοι', 'τοι', 'που', 'που', 'νυν',
+        'μαλιστα', 'αρα', 'γε', 'περ', 'δη', 'αυτε', 'αθαρ',
+        # Prepositions
+        'εν', 'εκ', 'εξ', 'εις', 'προς', 'απο', 'υπο', 'επι', 'περι', 'παρα',
+        'μετα', 'κατα', 'δια', 'αντι', 'αμφι', 'συν', 'υπερ', 'προ',
+        # Pronouns
+        'αυτος', 'αυτη', 'αυτο', 'συ', 'εγω', 'ημεις', 'υμεις', 'εκεινος',
+        'ουτος', 'αυτη', 'τουτο', 'οδε', 'ηδε', 'τοδε', 'τις', 'τι', 'ος',
+        'η', 'ο', 'ιδιος', 'αλληλος',
+        # Adverbs
+        'ου', 'ουκ', 'ουχ', 'μη', 'ουτε', 'ωδε', 'εκει', 'ενθα', 'τοτε',
+        'νυν', 'ετι', 'αει', 'τε', 'αρτι', 'ευθυς', 'ουποτε', 'ουπω', 'μαλιστα',
+        'μαλλον', 'ολως', 'παντελως', 'πολυ', 'μονον', 'ουδεποτε',
+        # Copula / auxiliary
+        'ειμι', 'εστι', 'εστιν',
+    }
+
+    res_all = results['lemmas_deaccented']
+    if res_all:
+        dtm_all = res_all['dtm']
+        fn_all = res_all['feature_names']
+        # Filter to function words present in MFW
+        func_indices = [i for i, f in enumerate(fn_all) if f in GREEK_FUNCTION_WORDS]
+        if func_indices:
+            dtm_f = dtm_all[:, func_indices]
+            fn_f = fn_all[func_indices]
+            mean_a_f = np.mean(dtm_f[:len(chunks_a)], axis=0)
+            mean_b_f = np.mean(dtm_f[len(chunks_a):], axis=0)
+            diff_f = mean_a_f - mean_b_f
+
+            top_n = min(10, len(func_indices))
+            top_indices = np.argsort(np.abs(diff_f))[::-1][:top_n]
+
+            markers_data = []
+            for idx in top_indices:
+                markers_data.append({
+                    'Marker': fn_f[idx],
+                    'PE_Mean_Freq': round(mean_a_f[idx], 2),
+                    'E_Mean_Freq': round(mean_b_f[idx], 2),
+                    'Difference': round(diff_f[idx], 2),
+                    'Favored_By': 'PE' if diff_f[idx] > 0 else 'E'
+                })
+
+            markers_df = pd.DataFrame(markers_data)
+            markers_df.to_csv('stylistic_markers.csv', index=False)
+            print("Stylistic markers (function words only) saved to 'stylistic_markers.csv'.")
+            print(markers_df.to_string(index=False))
+        else:
+            print("No function words found in top MFW — widening to all lemmas.")
+            # Fallback: use all lemmas but warn
+            dtm_all2 = res_all['dtm']
+            mean_a = np.mean(dtm_all2[:len(chunks_a)], axis=0)
+            mean_b = np.mean(dtm_all2[len(chunks_a):], axis=0)
+            diff = mean_a - mean_b
+            top_indices = np.argsort(np.abs(diff))[::-1][:10]
+            markers_data = [{'Marker': fn_all[i], 'PE_Mean_Freq': round(mean_a[i], 2),
+                             'E_Mean_Freq': round(mean_b[i], 2), 'Difference': round(diff[i], 2),
+                             'Favored_By': 'PE' if diff[i] > 0 else 'E'} for i in top_indices]
+            markers_df = pd.DataFrame(markers_data)
+            markers_df.to_csv('stylistic_markers.csv', index=False)
+            print(markers_df.to_string(index=False))
     
+
     # Print average distance
     if 'lemmas_deaccented' in results:
         res = results['lemmas_deaccented']
