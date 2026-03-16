@@ -230,10 +230,12 @@ def main():
         # Prepositions
         'εν', 'εκ', 'εξ', 'εις', 'προς', 'απο', 'υπο', 'επι', 'περι', 'παρα',
         'μετα', 'κατα', 'δια', 'αντι', 'αμφι', 'συν', 'υπερ', 'προ',
-        # Pronouns
+        # Pronouns — EXCLUDE bare articles (ο, η) and interrogatives (τι) which
+        # are too frequent and non-specific to be useful stylistic markers
         'αυτος', 'αυτη', 'αυτο', 'συ', 'εγω', 'ημεις', 'υμεις', 'εκεινος',
-        'ουτος', 'αυτη', 'τουτο', 'οδε', 'ηδε', 'τοδε', 'τις', 'τι', 'ος',
-        'η', 'ο', 'ιδιος', 'αλληλος',
+        'ουτος', 'τουτο', 'οδε', 'ηδε', 'τοδε', 'τις', 'ος',
+        'ιδιος', 'αλληλος',
+
         # Adverbs
         'ου', 'ουκ', 'ουχ', 'μη', 'ουτε', 'ωδε', 'εκει', 'ενθα', 'τοτε',
         'νυν', 'ετι', 'αει', 'τε', 'αρτι', 'ευθυς', 'ουποτε', 'ουπω', 'μαλιστα',
@@ -258,25 +260,49 @@ def main():
             top_n = min(10, len(func_indices))
             top_indices = np.argsort(np.abs(diff_f))[::-1][:top_n]
 
+            # Total tokens per corpus (for length normalization)
+            # Each chunk has lemmas_deaccented; count total tokens from the DTM sums
+            pe_tokens = int(np.sum(dtm_all[:len(chunks_a)]))   # all features, all PE chunks
+            e_tokens  = int(np.sum(dtm_all[len(chunks_a):]))   # all features, all E chunks
+            print(f"Total tokens — PE: {pe_tokens}, E: {e_tokens}")
+
             # Total counts = sum of raw occurrences across all chunks (not normalized)
             total_a_f = np.sum(dtm_f[:len(chunks_a)], axis=0)
             total_b_f = np.sum(dtm_f[len(chunks_a):], axis=0)
+
+            # Normalized rate per 1,000 tokens
+            rate_a_f = total_a_f / pe_tokens * 1000
+            rate_b_f = total_b_f / e_tokens  * 1000
+
+            # Significance filter: keep only markers that appear at least 4 times
+            # in BOTH texts. In a corpus this small, comparing a word that appears
+            # 0 or 2 times against another text is mostly noise.
+            MIN_RAW_COUNT = 4
+            significant_mask = (total_a_f >= MIN_RAW_COUNT) & (total_b_f >= MIN_RAW_COUNT)
+
+
+            # Re-rank by normalised difference (rate_a - rate_b), take top 10 significant
+            norm_diff = rate_a_f - rate_b_f
+            # Apply mask then sort
+            masked_indices = np.where(significant_mask)[0]
+            sorted_masked = masked_indices[np.argsort(np.abs(norm_diff[masked_indices]))[::-1]]
+            top_indices = sorted_masked[:10]
 
             markers_data = []
             for idx in top_indices:
                 markers_data.append({
                     'Marker': fn_f[idx],
-                    'PE_Total_Count': int(total_a_f[idx]),
-                    'E_Total_Count': int(total_b_f[idx]),
-                    'PE_Mean_Freq': round(mean_a_f[idx], 2),
-                    'E_Mean_Freq': round(mean_b_f[idx], 2),
-                    'Difference': round(diff_f[idx], 2),
-                    'Favored_By': 'PE' if diff_f[idx] > 0 else 'E'
+                    'PE_Total': int(total_a_f[idx]),
+                    'E_Total':  int(total_b_f[idx]),
+                    'PE_per_1k': round(rate_a_f[idx], 2),
+                    'E_per_1k':  round(rate_b_f[idx], 2),
+                    'Rate_Diff': round(norm_diff[idx], 2),
+                    'Favored_By': 'PE' if norm_diff[idx] > 0 else 'E'
                 })
 
             markers_df = pd.DataFrame(markers_data)
             markers_df.to_csv('stylistic_markers.csv', index=False)
-            print("Stylistic markers (function words only) saved to 'stylistic_markers.csv'.")
+            print(f"Stylistic markers (function words, raw count >= {MIN_RAW_COUNT} in both texts) saved to 'stylistic_markers.csv'.")
             print(markers_df.to_string(index=False))
 
         else:
