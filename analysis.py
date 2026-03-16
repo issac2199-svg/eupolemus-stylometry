@@ -184,6 +184,18 @@ def main():
         plt.figure(figsize=(10, 7))
         dendrogram(linked, labels=chunk_labels, orientation='top', distance_sort='descending', show_leaf_counts=True)
         plt.title(f'Dendrogram (Burrows\' Delta) - {feature_type}')
+        
+        # Color the X-axis tick labels based on author
+        ax = plt.gca()
+        xlbls = ax.get_xmajorticklabels()
+        for lbl in xlbls:
+            if lbl.get_text().startswith('PE_'):
+                lbl.set_color('#d62728')  # deep red for PE
+                lbl.set_fontweight('bold')
+            else:
+                lbl.set_color('#1f77b4')  # deep blue for E
+                lbl.set_fontweight('bold')
+
         plt.tight_layout()
         plt.savefig(f'dendrogram_{feature_type}.png')
         plt.close()
