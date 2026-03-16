@@ -90,12 +90,19 @@ E's style is heavily dominated by one major differentiator:
 The PCA plots project each 50-word chunk into a two-dimensional space capturing the main axes of stylistic variance.
 
 **(1) Lemmas (Accented and De-accented):**
+![PCA Lemmas Accented](pca_lemmas_accented.png)
+![PCA Lemmas Deaccented](pca_lemmas_deaccented.png)
+
 In both the accented and de-accented lemma PCA plots, PE chunks and E chunks occupy **distinct regions** of the projection space. The separation is clear on the primary axis (PC1), suggesting the main dimension of variance is deeply stylistic.
 
 **(2) Character 4-Grams:**
+![PCA Character 4-Grams](pca_char_4grams.png)
+
 Character n-gram PCA is one of the most *author-invariant* features, as it captures sub-morphemic patterns. The PE/E separation persists strongly at the character n-gram level, proving the stylistic signal is embedded in the **surface morphophonological texture** of the texts, not just word choice.
 
 **(3) POS Tags:**
+![PCA POS Tags Distribution](pca_pos_tags.png)
+
 The POS-tag PCA maps *syntactic* style rather than actual words. The continued separation confirms the two authors employ **structurally different sentence patterns** (different ratios of verbs/nouns, subordinations, etc.), which is the most theoretically robust evidence of distinct authorship.
 
 ### 4.2 Dendrograms
@@ -103,9 +110,15 @@ The POS-tag PCA maps *syntactic* style rather than actual words. The continued s
 The dendrograms visualise hierarchical clustering driven by Burrows' Delta.
 
 **(1) Lemmas and Character 4-Grams:**
+![Dendrogram Lemmas Accented](dendrogram_lemmas_accented.png)
+![Dendrogram Lemmas Deaccented](dendrogram_lemmas_deaccented.png)
+![Dendrogram Character 4-Grams](dendrogram_char_4grams.png)
+
 In the dendrograms for textual features, PE and E chunks form **two primary branches** at the root node. The bifurcation is a diagnostic signature: if the texts were stylistically homogeneous, chunks would intermix across branches. The within-group variance (PE vs. PE and E vs. E) clusters identically tightly.
 
 **(2) POS Tags:**
+![Dendrogram POS Tags](dendrogram_pos_tags.png)
+
 Even when all semantic meaning (content words) is stripped, and only the grammatical sequences remain, the authorial clustering divides PE from E clearly on the highest branch of the tree.
 
 ---
