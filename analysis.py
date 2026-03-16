@@ -328,6 +328,10 @@ def main():
         sim_a_b = np.mean(cos_mat[:len(chunks_a), len(chunks_a):])
         print(f"Between-author Cosine Similarity (Lemmas Deaccented): {sim_a_b:.4f}")
         
+        delta_mat = res['delta_matrix']
+        delta_a_b = np.mean(delta_mat[:len(chunks_a), len(chunks_a):])
+        print(f"Between-author Burrows' Delta (Lemmas Deaccented): {delta_a_b:.4f}")
+        
     print("Analysis complete. Check the directory for PCA plots, Dendrograms, and CSV files.")
 
 if __name__ == "__main__":
