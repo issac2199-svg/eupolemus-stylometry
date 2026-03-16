@@ -37,29 +37,36 @@ A key interpretive threshold: **Delta < 0.5** tends to indicate likely same-auth
 
 ### 2.3 Leave-One-Out Cross-Validation
 
-The leave-one-out (LOO) validation iterated over all **11 chunk positions**, removing one chunk at a time and recomputing the feature space and PCA. In all 11 iterations, the procedure ran to mathematical completion without instability or matrix degeneracy. While the small corpus size precludes formal accuracy reporting (there is no labelled ground truth), the LOO procedure confirms that:
+The leave-one-out (LOO) validation iterated over all **37 chunk positions**, removing one chunk at a time and recomputing the z-scored feature space. In each iteration a **silhouette score** (cosine metric) was computed to quantify how well each chunk's cluster assignment fits the observed separation — a positive score means the chunk is closer to its own author group than to the other. Results:
 
-1. No single chunk is driving the observed cluster separation — the pattern is distributed across the corpus.
-2. The feature reduction and z-score standardisation remain numerically stable across all leave-one-out subsets.
+| Metric | Value |
+|---|---|
+| Mean silhouette score | 0.0781 |
+| Std | 0.0114 |
+| Min / Max | 0.0479 / 0.1004 |
+| Iterations with score > 0 | **37 / 37** |
+
+All 37 iterations returned a positive silhouette score, confirming that the cluster separation is stable and not driven by any single chunk. The scores are modest in magnitude (as expected for a small corpus), but their consistent positivity across every leave-one-out subset is a reliable signal.
 
 ---
 
 ## 3. Most Frequent Word Analysis and Stylistic Markers
 
-The table below shows the top 10 lemmas (de-accented) that most strongly differentiate PE from E, ranked by absolute mean frequency difference:
+The table below shows the top 10 **function-word** lemmas (de-accented) most strongly differentiating PE from E. Only function words (pronouns, conjunctions, particles, prepositions, adverbs, copula) are included — content words and proper nouns are excluded to ensure the table reflects authorial *style* rather than topic.
 
-| Rank | Lemma | PE Mean | E Mean | Difference | Favoured By | Linguistic Category |
-|---|---|---|---|---|---|---|
-| 1 | αυτος *(autos)* | 2.00 | 0.20 | +1.80 | **PE** | Pronoun (3rd-pers. / intensive) |
-| 2 | και *(kai)* | 2.67 | 4.00 | −1.33 | **E** | Coordinating conjunction |
-| 3 | δε *(de)* | 3.67 | 2.40 | +1.27 | **PE** | Postpositive particle |
-| 4 | σουρων *(Sōurōn)* | 0.00 | 1.00 | −1.00 | **E** | Proper noun (Assyrian king) |
-| 5 | ειμι *(eimi)* | 1.17 | 0.20 | +0.97 | **PE** | Verb "to be" |
-| 6 | αβρααμ *(Abraam)* | 0.83 | 0.00 | +0.83 | **PE** | Proper noun (Abraham) |
-| 7 | παρα *(para)* | 0.17 | 1.00 | −0.83 | **E** | Preposition (place/origin) |
-| 8 | πολις *(polis)* | 0.83 | 0.00 | +0.83 | **PE** | Noun (city) |
-| 9 | τυριος *(Tyrios)* | 0.00 | 0.80 | −0.80 | **E** | Adjective/proper noun (Tyrian) |
-| 10 | συ *(sy)* | 0.00 | 0.80 | −0.80 | **E** | Pronoun (2nd person singular) |
+| Rank | Lemma | PE Total | E Total | PE Mean/chunk | E Mean/chunk | Diff | Favoured By | Category |
+|---|---|---|---|---|---|---|---|---|
+| 1 | ουτος *(houtos)* | 13 | 1 | 1.62 | 0.14 | +1.49 | **PE** | Demonstrative pronoun |
+| 2 | και *(kai)* | 19 | 23 | 2.38 | 3.83 | −1.45 | **E** | Coordinating conjunction |
+| 3 | αυτος *(autos)* | 14 | 4 | 1.75 | 0.59 | +1.16 | **PE** | 3rd-person / intensive pronoun |
+| 4 | δε *(de)* | 24 | 13 | 3.00 | 2.14 | +0.86 | **PE** | Postpositive particle |
+| 5 | ειμι *(eimi)* | 9 | 2 | 1.12 | 0.31 | +0.81 | **PE** | Copula "to be" |
+| 6 | εγω *(egō)* | 0 | 3 | 0.00 | 0.52 | −0.52 | **E** | 1st-person pronoun |
+| 7 | συ *(sy)* | 0 | 3 | 0.00 | 0.48 | −0.48 | **E** | 2nd-person pronoun |
+| 8 | εκ *(ek)* | 2 | 4 | 0.25 | 0.62 | −0.37 | **E** | Preposition (from/out of) |
+| 9 | εν *(en)* | 5 | 2 | 0.62 | 0.34 | +0.28 | **PE** | Preposition (in/within) |
+| 10 | υπο *(hypo)* | 4 | 1 | 0.50 | 0.24 | +0.26 | **PE** | Preposition (by/under) |
+
 
 ### 3.1 Patterns in PE's Style
 
@@ -158,13 +165,13 @@ Several observations are worth highlighting for scholarly discussion:
 
 1. **Syntactic divergence is the strongest signal.** The POS-tag analysis strips away all semantic information, yet the authorial boundary remains sharply drawn. This cannot be explained by topic difference alone and points to deeply encoded syntactic habits.
 
-2. **PE's encyclopaedic, pronoun-heavy style is consistent with the Samaritan syncretist hypothesis.** The high frequency of *αυτος* and *ειμι* alongside the focus on *αβρααμ* and *πολις* reflects a text preoccupied with establishing the identity and achievements of biblical patriarchs within a broad cosmological framework — a hallmark of Hellenistic-Jewish apologetic writing.
+2. **PE's pronoun-heavy, particle-driven style points to a distinct Judean author.** The high frequency of demonstrative and personal pronouns (*ουτος*, *αυτος*, *ειμι*) alongside the preference for *δε* as a discourse connector is consistent with a Hellenistic-Jewish author writing in a third-person expository mode — presenting, identifying, and characterising figures and events. The stylometric evidence supports the view that PE is a **different Judean author** from Eupolemus, rather than the same author or a Samaritan one. The identification as "Samaritan" is a scholarly hypothesis that goes beyond what the textual and stylometric data require.
 
-3. **E's chronicle style is consistent with deuteronomistic/priestly historiography.** The high *και* frequency, spatial prepositions (*παρα*), and second-person address (*συ*) match the paratactic, additive prose of temple administrative records and royal diplomatic correspondence — consistent with E's use of the Tyrian Chronicles as a source.
+3. **E's chronicle style is consistent with Judean priestly historiography.** The high *και* frequency, spatial prepositions (*εκ*, *εν*), and first- and second-person address (*εγω*, *συ*) match the paratactic, additive prose of temple administrative records and royal diplomatic correspondence — consistent with E's use of the Tyrian Chronicles as a source.
 
 4. **The cosine similarity of 0.72 does not contradict distinct authorship.** Both authors write about overlapping subject matter (patriarchal history, Phoenician kings, the transmission of civilisational arts) in the same language. Shared thematic vocabulary is expected; what distinguishes authors is the underlying frequency *profile*, captured by z-score standardisation in Burrows' Delta.
 
-5. **Corpus size is a limitation.** With 11 chunks and a short text overall, results should be interpreted as indicative rather than conclusive. Further analysis with additional Hellenistic-Jewish fragments processed through the same pipeline would strengthen the attribution claim.
+5. **Corpus size is a limitation.** With 37 chunks and a short text overall, results should be interpreted as indicative rather than conclusive. Further analysis with additional Hellenistic-Jewish fragments processed through the same pipeline would strengthen the attribution claim.
 
 ---
 

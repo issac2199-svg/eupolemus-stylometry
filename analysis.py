@@ -258,10 +258,16 @@ def main():
             top_n = min(10, len(func_indices))
             top_indices = np.argsort(np.abs(diff_f))[::-1][:top_n]
 
+            # Total counts = sum of raw occurrences across all chunks (not normalized)
+            total_a_f = np.sum(dtm_f[:len(chunks_a)], axis=0)
+            total_b_f = np.sum(dtm_f[len(chunks_a):], axis=0)
+
             markers_data = []
             for idx in top_indices:
                 markers_data.append({
                     'Marker': fn_f[idx],
+                    'PE_Total_Count': int(total_a_f[idx]),
+                    'E_Total_Count': int(total_b_f[idx]),
                     'PE_Mean_Freq': round(mean_a_f[idx], 2),
                     'E_Mean_Freq': round(mean_b_f[idx], 2),
                     'Difference': round(diff_f[idx], 2),
@@ -272,6 +278,7 @@ def main():
             markers_df.to_csv('stylistic_markers.csv', index=False)
             print("Stylistic markers (function words only) saved to 'stylistic_markers.csv'.")
             print(markers_df.to_string(index=False))
+
         else:
             print("No function words found in top MFW — widening to all lemmas.")
             # Fallback: use all lemmas but warn
