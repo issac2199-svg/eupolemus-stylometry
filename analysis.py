@@ -260,13 +260,13 @@ def main():
             top_n = min(10, len(func_indices))
             top_indices = np.argsort(np.abs(diff_f))[::-1][:top_n]
 
-            # Total tokens per corpus (for length normalization)
-            # Each chunk has lemmas_deaccented; count total tokens from the DTM sums
-            pe_tokens = int(np.sum(dtm_all[:len(chunks_a)]))   # all features, all PE chunks
-            e_tokens  = int(np.sum(dtm_all[len(chunks_a):]))   # all features, all E chunks
-            print(f"Total tokens — PE: {pe_tokens}, E: {e_tokens}")
+            # Total tokens per corpus (for accurate length normalization)
+            # Sum the word length of the original text blocks for PE and E
+            pe_tokens = sum(len(c['chunk_text'].split()) for c in all_chunks[:len(chunks_a)])
+            e_tokens  = sum(len(c['chunk_text'].split()) for c in all_chunks[len(chunks_a):])
+            print(f"Actual corpus word count — PE: {pe_tokens}, E: {e_tokens}")
 
-            # Total counts = sum of raw occurrences across all chunks (not normalized)
+            # Total occurrences of the specific markers across all chunks
             total_a_f = np.sum(dtm_f[:len(chunks_a)], axis=0)
             total_b_f = np.sum(dtm_f[len(chunks_a):], axis=0)
 

@@ -10,10 +10,10 @@ This document presents a detailed interpretation of the computational stylometri
 
 The corpus consists of two Greek-language texts:
 
-| Author | Fragment(s) | Words (Approximate) | Chunks (50-word segments) |
+| Author | Fragment(s) | Words | Chunks (50-word segments) |
 |---|---|---|---|
-| Pseudo-Eupolemus (PE) | Fragment 1 | 220 | 6 chunks |
-| Eupolemus (E) | Fragments 2–5 | 743 | 5 chunks |
+| Pseudo-Eupolemus (PE) | Fragment 1 | 400 | 8 chunks |
+| Eupolemus (E) | Fragments 2–5 | 1437 | 29 chunks |
 
 Texts were processed through CLTK's Ancient Greek NLP pipeline (`grc_odycy_joint_sm`), yielding lemmatized forms, part-of-speech tags, and character 4-gram sequences. Both accented and de-accented lemma variants were retained to test sensitivity to polytonic orthography. Splitting texts into 50-word chunks is standard practice in corpus stylometry: it maximises the number of data points available for statistical comparison and reduces the distorting effect of any single passage.
 
@@ -58,26 +58,26 @@ To prevent topic-driven words from appearing, only function words (conjunctions,
 
 | Rank | Lemma | PE Total | E Total | PE Rate (per 1k) | E Rate (per 1k) | Diff | Favoured By | Category |
 |---|---|---|---|---|---|---|---|---|
-| 1 | και *(kai)* | 19 | 111 | 86.36 | 149.39 | −63.03 | **E** | Coordinating conjunction |
-| 2 | ουτος *(houtos)* | 13 | 4 | 59.09 | 5.38 | +53.71 | **PE** | Demonstrative pronoun |
-| 3 | αυτος *(autos)* | 14 | 17 | 63.64 | 22.88 | +40.76 | **PE** | 3rd-person / intensive pronoun |
-| 4 | ειμι *(eimi)* | 9 | 9 | 40.91 | 12.11 | +28.80 | **PE** | Copula "to be" |
-| 5 | δε *(de)* | 24 | 62 | 109.09 | 83.45 | +25.65 | **PE** | Postpositive particle |
-| 6 | εν *(en)* | 5 | 10 | 22.73 | 13.46 | +9.27 | **PE** | Preposition (in/within) |
-| 7 | υπο *(hypo)* | 4 | 7 | 18.18 | 9.42 | +8.76 | **PE** | Preposition (by/under) |
-| 8 | ος *(hos)* | 6 | 15 | 27.27 | 20.19 | +7.08 | **PE** | Relative pronoun |
+| 1 | και *(kai)* | 19 | 111 | 47.50 | 77.24 | −29.74 | **E** | Coordinating conjunction |
+| 2 | ουτος *(houtos)* | 13 | 4 | 32.50 | 2.78 | +29.72 | **PE** | Demonstrative pronoun |
+| 3 | αυτος *(autos)* | 14 | 17 | 35.00 | 11.83 | +23.17 | **PE** | 3rd-person / intensive pronoun |
+| 4 | δε *(de)* | 24 | 62 | 60.00 | 43.15 | +16.85 | **PE** | Postpositive particle |
+| 5 | ειμι *(eimi)* | 9 | 9 | 22.50 | 6.26 | +16.24 | **PE** | Copula "to be" |
+| 6 | εν *(en)* | 5 | 10 | 12.50 | 6.96 | +5.54 | **PE** | Preposition (in/within) |
+| 7 | υπο *(hypo)* | 4 | 7 | 10.00 | 4.87 | +5.13 | **PE** | Preposition (by/under) |
+| 8 | ος *(hos)* | 6 | 15 | 15.00 | 10.44 | +4.56 | **PE** | Relative pronoun |
 
 ### 3.1 Patterns in PE's Style
 
 PE's top markers map out to a distinct profile:
 - **Pronominal intensity** (*ουτος*, *αυτος*, *ος*): Extremely frequent usage of demonstrative, intensive, and relative pronouns compared to E. This fits an *expository* or *narrative-descriptive* frame where the author repeatedly references and identifies key figures.
-- **Adversative/contrastive particles** (*δε*): PE uses *δε* at a highly elevated rate (109 occurrences per 1k words compared to E's 83). The particle introduces subtle contrasts and logic-driven sequencing — characteristic of an argument-driven historical synthesis.
+- **Adversative/contrastive particles** (*δε*): PE uses *δε* at a highly elevated rate (60 occurrences per 1k words compared to E's 43). The particle introduces subtle contrasts and logic-driven sequencing — characteristic of an argument-driven historical synthesis.
 - **Copular Constructions** (*ειμι*): "To be" constructions are almost 4 times more frequent relative to text length in PE.
 
 ### 3.2 Patterns in E's Style
 
 E's style is heavily dominated by one major differentiator:
-- **Paratactic coordination** (*και*): E relies on *και* ("and") at a remarkably high rate — roughly 150 instances per 1,000 words. A rate this high is characteristic of **chronicle-style prose**, where actions and descriptions are strung sequentially without subordination.
+- **Paratactic coordination** (*και*): E relies on *και* ("and") at a remarkably high rate — roughly 77 instances per 1,000 words (compared to 47 in PE). A rate this high is characteristic of **chronicle-style prose**, where actions and descriptions are strung sequentially without subordination.
 
 *(Note: Epistolary remnants like εγω and συ, which only appear in E's diplomatic letters, have been intentionally filtered out of this table to ensure we compare only words both authors had an opportunity to use frequently).*
 
